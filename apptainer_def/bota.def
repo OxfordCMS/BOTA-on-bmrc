@@ -1,0 +1,206 @@
+Bootstrap: docker
+From: debian:12-slim
+
+%labels
+    Author      HPC Admin - Kennedy Institute of Rheumatology, Oxford
+    Description BOTA: Bacteria Originated T-Cell Antigen Predictor
+    Version     1.0
+    Python      2.7.18 (compiled from source)
+    Base        Debian 12 (bookworm)
+
+%help
+    BOTA: Predicting Bacteria-origined T-cell antigens.
+    Python 2.7.18 compiled from source on Debian 12.
+    Includes: BioPython 1.76, NetworkX 2.2, HMMER 3.3.2
+    HMMTOP and PSORTb must be bind-mounted (see below).
+
+    Basic usage:
+        apptainer exec bota.sif python2.7 /opt/BOTA/BOTA.py [options]
+
+    With Pfam database and data:
+        apptainer exec \
+            --bind /path/to/pfam:/pfam \
+            --bind /path/to/data:/data \
+            bota.sif python2.7 /opt/BOTA/BOTA.py [options]
+
+    Bind-mount HMMTOP and PSORTb if not embedded in the image:
+        --bind /path/to/hmmtop/bin:/usr/local/hmmtop
+        --bind /path/to/psortb/bin:/usr/local/psortb/bin
+
+%environment
+    export PATH=/opt/BOTA:/opt/python27/bin:/opt/hmmer/bin:/usr/local/hmmtop:/usr/local/psortb/bin:$PATH
+    export LD_LIBRARY_PATH=/opt/python27/lib:$LD_LIBRARY_PATH
+    export LC_ALL=C
+    export LANG=C
+    # Keras — Theano is the only viable backend for Python 2.7
+    export KERAS_BACKEND=theano
+    export KERAS_HOME=/etc/keras
+
+%post
+    set -e
+    export DEBIAN_FRONTEND=noninteractive
+    export LC_ALL=C
+
+
+    # ------------------------------------------------------------------ #
+    # Base build dependencies (Debian 12 / bookworm — current, signed)
+    # ------------------------------------------------------------------ #
+    apt-get update -y
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        wget \
+        git \
+        ca-certificates \
+        pkg-config \
+        libssl-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libffi-dev \
+        liblzma-dev \
+        libncurses5-dev \
+        libgdbm-dev \
+        libgomp1 \
+        perl
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    # ------------------------------------------------------------------ #
+    # Python 2.7.18 — compiled from source
+    # (final Python 2.7 release, April 2020)
+    # ------------------------------------------------------------------ #
+    cd /tmp
+    wget -q --no-check-certificate \
+        https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
+    tar xzf Python-2.7.18.tgz
+    cd Python-2.7.18
+
+    ./configure \
+        --prefix=/opt/python27 \
+        --enable-shared \
+        --enable-unicode=ucs4 \
+        --with-ensurepip=install \
+        LDFLAGS="-Wl,-rpath=/opt/python27/lib"
+
+    make -j$(nproc)
+    make install
+    cd /
+    rm -rf /tmp/Python-2.7.18 /tmp/Python-2.7.18.tgz
+
+    # Convenience symlinks
+    ln -sf /opt/python27/bin/python2.7 /usr/local/bin/python2.7
+    ln -sf /opt/python27/bin/python2.7 /usr/local/bin/python2
+    ln -sf /opt/python27/bin/python2.7 /usr/local/bin/python
+    ln -sf /opt/python27/bin/pip2.7    /usr/local/bin/pip2.7
+    ln -sf /opt/python27/bin/pip2.7    /usr/local/bin/pip
+
+    # ------------------------------------------------------------------ #
+    # pip — bootstrap the last pip that supports Python 2.7
+    # ------------------------------------------------------------------ #
+    wget -q --no-check-certificate \
+        https://bootstrap.pypa.io/pip/2.7/get-pip.py \
+        -O /tmp/get-pip.py
+    python2.7 /tmp/get-pip.py "pip==20.3.4" "setuptools==44.1.1" "wheel==0.37.1"
+    rm /tmp/get-pip.py
+
+    # ------------------------------------------------------------------ #
+    # Python 2.7 libraries
+    # Last versions supporting Python 2.7:
+    #   numpy     1.16.6
+    #   scipy     1.2.3
+    #   h5py      2.10.0  (h5py 3.x dropped Python 2.7)
+    #   biopython 1.76
+    #   networkx  2.2
+    #   theano    1.0.5   (Keras backend; TF dropped Python 2.7 too early)
+    #   keras     2.2.5   (last Keras release supporting Python 2.7)
+    # ------------------------------------------------------------------ #
+    python2.7 -m pip install \
+        "numpy==1.16.6" \
+        "scipy==1.2.3" \
+        "h5py==2.10.0" \
+        "biopython==1.76" \
+        "networkx==2.2" \
+        "theano==1.0.5" \
+        "keras==2.2.5"
+
+    # Configure Keras to use Theano backend (write to global location
+    # so it is available to all users of the container, not just root)
+    mkdir -p /etc/keras
+    cat > /etc/keras/keras.json << 'KERASJSON'
+{
+    "floatx": "float32",
+    "epsilon": 1e-07,
+    "backend": "theano",
+    "image_data_format": "channels_last"
+}
+KERASJSON
+    # Keras also reads from ~/.keras/keras.json; set a system-wide default
+    # by pointing the env var at our global copy (done in %environment)
+
+    # ------------------------------------------------------------------ #
+    # HMMER 3.3.2
+    # ------------------------------------------------------------------ #
+    cd /tmp
+    wget -q http://eddylab.org/software/hmmer/hmmer-3.3.2.tar.gz
+    tar xzf hmmer-3.3.2.tar.gz
+    cd hmmer-3.3.2
+    ./configure --prefix=/opt/hmmer
+    make -j$(nproc)
+    make install
+    cd /
+    rm -rf /tmp/hmmer-3.3.2 /tmp/hmmer-3.3.2.tar.gz
+
+    # ------------------------------------------------------------------ #
+    # HMMTOP — not freely redistributable; placeholder only.
+    # Bind-mount your licensed copy at /usr/local/hmmtop at runtime.
+    # ------------------------------------------------------------------ #
+    mkdir -p /usr/local/hmmtop
+
+    # ------------------------------------------------------------------ #
+    # PSORTb 3.0 — placeholder only.
+    # Download from http://www.psort.org/psortb/ and bind-mount at runtime.
+    # ------------------------------------------------------------------ #
+    mkdir -p /usr/local/psortb/bin
+
+    # ------------------------------------------------------------------ #
+    # BOTA
+    # ------------------------------------------------------------------ #
+    cd /opt
+    git clone https://bitbucket.org/luo-chengwei/BOTA.git \
+        || git clone https://github.com/luo-chengwei/BOTA.git \
+        || { echo "WARNING: BOTA clone failed - bind-mount source at /opt/BOTA"; mkdir -p /opt/BOTA; }
+
+    [ -f /opt/BOTA/BOTA.py ] && chmod +x /opt/BOTA/BOTA.py || true
+    ln -sf /opt/BOTA/BOTA.py /usr/local/bin/BOTA.py
+
+    # NOTE: Per-step cleanup is done inline above (after Python and HMMER builds).
+    # Do NOT use 'rm -rf /tmp/*' here — in fakeroot builds /tmp is not
+    # namespaced and it will attempt to delete the host's /tmp.
+
+%runscript
+    exec python2.7 /opt/BOTA/BOTA.py "$@"
+
+%test
+    echo "=== Python 2.7 ==="
+    python2.7 --version
+
+    echo "=== pip ==="
+    python2.7 -m pip --version
+
+    echo "=== BioPython ==="
+    python2.7 -c "import Bio; print('BioPython', Bio.__version__)"
+
+    echo "=== NetworkX ==="
+    python2.7 -c "import networkx; print('NetworkX', networkx.__version__)"
+
+    echo "=== NumPy ==="
+    python2.7 -c "import numpy; print('NumPy', numpy.__version__)"
+
+    echo "=== HMMER ==="
+    /opt/hmmer/bin/hmmbuild -h 2>&1 | head -2
+
+    echo "=== BOTA ==="
+    [ -f /opt/BOTA/BOTA.py ] \
+        && echo "OK: BOTA.py found at /opt/BOTA/BOTA.py" \
+        || echo "WARNING: BOTA.py not found - check clone step or bind-mount source"

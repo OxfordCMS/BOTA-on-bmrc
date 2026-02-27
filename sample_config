@@ -1,0 +1,10 @@
+#this a config page for Citrobacter_rodentium_ATCC_51459
+blat='blat'
+hmmscan='hmmscan'
+#hmmtop='hmmtop'
+#psort='psort'
+prodigal='prodigal'
+[Citrobacter_rodentium_ATCC_51459]
+fna	/gpfs3/well/kir/projects/mirror/containers/BOTA/data/Citrobacter_rodentium_ATCC_51459/GCF_000835925.1_ASM83592v1_genomic.fna
+gff	/gpfs3/well/kir/projects/mirror/containers/BOTA/data/Citrobacter_rodentium_ATCC_51459/GCF_000835925.1_ASM83592v1_genomic.gff
+alleles	H-2-IAb
