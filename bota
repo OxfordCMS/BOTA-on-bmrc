@@ -1,0 +1,48 @@
+#!/bin/bash
+# bota - wrapper to run BOTA with Pfam database bind-mounted
+#
+# Environment variables:
+#   BOTA_PFAM_DIR  path to directory containing Pfam-A.hmm* files
+#                  (default: ./pfam relative to wherever you call this script)
+#   BOTA_SIF       path to the bota.sif Apptainer image
+#                  (default: same directory as this script)
+
+PFAM_DIR="${BOTA_PFAM_DIR:-/gpfs3/well/kir/projects/mirror/containers/BOTA/pfam}"
+MODELS_DIR="${BOTA_MODELS_DIR:-$(pwd)/models}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SIF="${BOTA_SIF:-${SCRIPT_DIR}/bota.sif}"
+
+# Sanity checks
+if [ ! -f "${SIF}" ]; then
+    echo "[ERROR] Cannot find bota.sif at: ${SIF}" >&2
+    echo "        Set BOTA_SIF=/path/to/bota.sif to override." >&2
+    exit 1
+fi
+
+for ext in "" ".h3f" ".h3i" ".h3m" ".h3p"; do
+    f="${PFAM_DIR}/Pfam-A.hmm${ext}"
+    if [ ! -f "${f}" ]; then
+        echo "[ERROR] Cannot find Pfam file: ${f}" >&2
+        echo "        Set BOTA_PFAM_DIR=/path/to/pfam to override." >&2
+        exit 1
+    fi
+done
+
+if [ ! -d "${MODELS_DIR}" ]; then
+    echo "[ERROR] Cannot find models directory at: ${MODELS_DIR}" >&2
+    echo "        Set BOTA_MODELS_DIR=/path/to/models to override." >&2
+    exit 1
+fi
+
+
+apptainer exec \
+    --pwd "$(pwd)" \
+    --bind /gpfs3/well \
+    --bind /gpfs3/users \
+    --bind "${PFAM_DIR}/Pfam-A.hmm:/opt/BOTA/db/Pfam-A.hmm" \
+    --bind "${PFAM_DIR}/Pfam-A.hmm.h3f:/opt/BOTA/db/Pfam-A.hmm.h3f" \
+    --bind "${PFAM_DIR}/Pfam-A.hmm.h3i:/opt/BOTA/db/Pfam-A.hmm.h3i" \
+    --bind "${PFAM_DIR}/Pfam-A.hmm.h3m:/opt/BOTA/db/Pfam-A.hmm.h3m" \
+    --bind "${PFAM_DIR}/Pfam-A.hmm.h3p:/opt/BOTA/db/Pfam-A.hmm.h3p" \
+    --bind "${MODELS_DIR}:/opt/BOTA/models" \
+    "${SIF}" python2.7 /opt/BOTA/BOTA.py "$@"
