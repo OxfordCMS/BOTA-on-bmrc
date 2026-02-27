@@ -11,7 +11,7 @@
 
 PFAM_DIR="${BOTA_PFAM_DIR:-/gpfs3/well/kir/projects/mirror/containers/BOTA/pfam}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SIF="${BOTA_SIF:-${SCRIPT_DIR}/bot.sif}"
+SIF="${BOTA_SIF:-${SCRIPT_DIR}/bota.sif}"
 
 # Paths inside the container
 BOTA_PY="/usr/local/src/bota/BOTA/BOTA.py"
@@ -42,4 +42,5 @@ apptainer exec \
     --bind "${PFAM_DIR}/Pfam-A.hmm.h3i:${BOTA_DB}/Pfam-A.hmm.h3i" \
     --bind "${PFAM_DIR}/Pfam-A.hmm.h3m:${BOTA_DB}/Pfam-A.hmm.h3m" \
     --bind "${PFAM_DIR}/Pfam-A.hmm.h3p:${BOTA_DB}/Pfam-A.hmm.h3p" \
+    --bind "$(pwd)/BOTA.py:${BOTA_PY}" \
     "${SIF}" python "${BOTA_PY}" "$@"
