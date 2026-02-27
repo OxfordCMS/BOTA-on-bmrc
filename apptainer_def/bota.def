@@ -4,46 +4,47 @@ From: debian:12-slim
 %labels
     Author      HPC Admin - Kennedy Institute of Rheumatology, Oxford
     Description BOTA: Bacteria Originated T-Cell Antigen Predictor
-    Version     1.0
+    Version     2.0
     Python      2.7.18 (compiled from source)
+    Keras       1.2.2 (Theano 0.9.0 backend)
     Base        Debian 12 (bookworm)
 
 %help
     BOTA: Predicting Bacteria-origined T-cell antigens.
     Python 2.7.18 compiled from source on Debian 12.
-    Includes: BioPython 1.76, NetworkX 2.2, HMMER 3.3.2
-    HMMTOP and PSORTb must be bind-mounted (see below).
+
+    Bundled tools:
+        HMMER  3.3.2       (/opt/hmmer/bin/)
+        BLAT   36x2        (/usr/local/bin/blat)
+        Prodigal 2.6.3     (/usr/local/bin/prodigal)
+
+    Bind-mount at runtime (not bundled):
+        HMMTOP:  --bind /path/to/hmmtop:/usr/local/hmmtop
+        PSORTb:  --bind /path/to/psortb/bin:/usr/local/psortb/bin
 
     Basic usage:
-        apptainer exec bota.sif python2.7 /opt/BOTA/BOTA.py [options]
-
-    With Pfam database and data:
         apptainer exec \
-            --bind /path/to/pfam:/pfam \
-            --bind /path/to/data:/data \
+            --bind /path/to/pfam:/opt/BOTA/db/... \  # (use wrapper script)
+            --bind /path/to/models:/opt/BOTA/models \
             bota.sif python2.7 /opt/BOTA/BOTA.py [options]
 
-    Bind-mount HMMTOP and PSORTb if not embedded in the image:
-        --bind /path/to/hmmtop/bin:/usr/local/hmmtop
-        --bind /path/to/psortb/bin:/usr/local/psortb/bin
+    Use the 'bota' wrapper script for convenience.
 
 %environment
     export PATH=/opt/BOTA:/opt/python27/bin:/opt/hmmer/bin:/usr/local/hmmtop:/usr/local/psortb/bin:$PATH
     export LD_LIBRARY_PATH=/opt/python27/lib:$LD_LIBRARY_PATH
     export LC_ALL=C
     export LANG=C
-    # Keras — Theano is the only viable backend for Python 2.7
+    # Keras 1.2.2 backend configuration
     export KERAS_BACKEND=theano
-    export KERAS_HOME=/etc/keras
 
 %post
     set -e
     export DEBIAN_FRONTEND=noninteractive
     export LC_ALL=C
 
-
     # ------------------------------------------------------------------ #
-    # Base build dependencies (Debian 12 / bookworm — current, signed)
+    # Base build dependencies
     # ------------------------------------------------------------------ #
     apt-get update -y
     apt-get install -y --no-install-recommends \
@@ -68,27 +69,23 @@ From: debian:12-slim
 
     # ------------------------------------------------------------------ #
     # Python 2.7.18 — compiled from source
-    # (final Python 2.7 release, April 2020)
     # ------------------------------------------------------------------ #
     cd /tmp
     wget -q --no-check-certificate \
         https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
     tar xzf Python-2.7.18.tgz
     cd Python-2.7.18
-
     ./configure \
         --prefix=/opt/python27 \
         --enable-shared \
         --enable-unicode=ucs4 \
         --with-ensurepip=install \
         LDFLAGS="-Wl,-rpath=/opt/python27/lib"
-
     make -j$(nproc)
     make install
     cd /
     rm -rf /tmp/Python-2.7.18 /tmp/Python-2.7.18.tgz
 
-    # Convenience symlinks
     ln -sf /opt/python27/bin/python2.7 /usr/local/bin/python2.7
     ln -sf /opt/python27/bin/python2.7 /usr/local/bin/python2
     ln -sf /opt/python27/bin/python2.7 /usr/local/bin/python
@@ -96,7 +93,7 @@ From: debian:12-slim
     ln -sf /opt/python27/bin/pip2.7    /usr/local/bin/pip
 
     # ------------------------------------------------------------------ #
-    # pip — bootstrap the last pip that supports Python 2.7
+    # pip bootstrap
     # ------------------------------------------------------------------ #
     wget -q --no-check-certificate \
         https://bootstrap.pypa.io/pip/2.7/get-pip.py \
@@ -105,38 +102,38 @@ From: debian:12-slim
     rm /tmp/get-pip.py
 
     # ------------------------------------------------------------------ #
-    # Python 2.7 libraries
-    # Last versions supporting Python 2.7:
-    #   numpy     1.16.6
-    #   scipy     1.2.3
-    #   h5py      2.10.0  (h5py 3.x dropped Python 2.7)
-    #   biopython 1.76
-    #   networkx  2.2
-    #   theano    1.0.5   (Keras backend; TF dropped Python 2.7 too early)
-    #   keras     2.2.5   (last Keras release supporting Python 2.7)
+    # Python libraries
+    #
+    # Keras 1.2.2 requires Theano 0.9.0 as backend
+    # numpy 1.16.6 — last Python 2.7 compatible
+    # scipy 1.2.3  — last Python 2.7 compatible
+    # h5py  2.10.0 — last Python 2.7 compatible (Keras uses for model I/O)
+    # pyyaml 3.13  — last version with Python 2.7 support; Keras dep
+    # biopython 1.76, networkx 2.2 — last Python 2.7 compatible
     # ------------------------------------------------------------------ #
     python2.7 -m pip install \
         "numpy==1.16.6" \
         "scipy==1.2.3" \
         "h5py==2.10.0" \
+        "pyyaml==3.13" \
         "biopython==1.76" \
         "networkx==2.2" \
-        "theano==1.0.5" \
-        "keras==2.2.5"
+        "theano==0.9.0" \
+        "keras==1.2.2"
 
-    # Configure Keras to use Theano backend (write to global location
-    # so it is available to all users of the container, not just root)
+    # Configure Keras 1.2.2 to use Theano backend
     mkdir -p /etc/keras
     cat > /etc/keras/keras.json << 'KERASJSON'
 {
     "floatx": "float32",
     "epsilon": 1e-07,
     "backend": "theano",
-    "image_data_format": "channels_last"
+    "image_dim_ordering": "th"
 }
 KERASJSON
-    # Keras also reads from ~/.keras/keras.json; set a system-wide default
-    # by pointing the env var at our global copy (done in %environment)
+    # Keras 1.x reads from ~/.keras/keras.json; create a global one for root
+    mkdir -p /root/.keras
+    cp /etc/keras/keras.json /root/.keras/keras.json
 
     # ------------------------------------------------------------------ #
     # HMMER 3.3.2
@@ -152,6 +149,24 @@ KERASJSON
     rm -rf /tmp/hmmer-3.3.2 /tmp/hmmer-3.3.2.tar.gz
 
     # ------------------------------------------------------------------ #
+    # Prodigal 2.6.3 — precompiled Linux binary
+    # ------------------------------------------------------------------ #
+    wget -q \
+        https://github.com/hyattpd/Prodigal/releases/download/v2.6.3/prodigal.linux \
+        -O /usr/local/bin/prodigal
+    chmod +x /usr/local/bin/prodigal
+
+    # ------------------------------------------------------------------ #
+    # BLAT — UCSC precompiled Linux x86_64 binary
+    # Free for academic/nonprofit use; see http://www.kentinformatics.com
+    # for commercial licensing.
+    # ------------------------------------------------------------------ #
+    wget -q \
+        https://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/blat/blat \
+        -O /usr/local/bin/blat
+    chmod +x /usr/local/bin/blat
+
+    # ------------------------------------------------------------------ #
     # HMMTOP — not freely redistributable; placeholder only.
     # Bind-mount your licensed copy at /usr/local/hmmtop at runtime.
     # ------------------------------------------------------------------ #
@@ -159,7 +174,7 @@ KERASJSON
 
     # ------------------------------------------------------------------ #
     # PSORTb 3.0 — placeholder only.
-    # Download from http://www.psort.org/psortb/ and bind-mount at runtime.
+    # Bind-mount your installation at /usr/local/psortb at runtime.
     # ------------------------------------------------------------------ #
     mkdir -p /usr/local/psortb/bin
 
@@ -174,8 +189,7 @@ KERASJSON
     [ -f /opt/BOTA/BOTA.py ] && chmod +x /opt/BOTA/BOTA.py || true
     ln -sf /opt/BOTA/BOTA.py /usr/local/bin/BOTA.py
 
-    # NOTE: Per-step cleanup is done inline above (after Python and HMMER builds).
-    # Do NOT use 'rm -rf /tmp/*' here — in fakeroot builds /tmp is not
+    # NOTE: Do NOT use 'rm -rf /tmp/*' here — in fakeroot builds /tmp is not
     # namespaced and it will attempt to delete the host's /tmp.
 
 %runscript
@@ -185,8 +199,11 @@ KERASJSON
     echo "=== Python 2.7 ==="
     python2.7 --version
 
-    echo "=== pip ==="
-    python2.7 -m pip --version
+    echo "=== NumPy ==="
+    python2.7 -c "import numpy; print('NumPy', numpy.__version__)"
+
+    echo "=== Keras ==="
+    python2.7 -c "import keras; print('Keras', keras.__version__)"
 
     echo "=== BioPython ==="
     python2.7 -c "import Bio; print('BioPython', Bio.__version__)"
@@ -194,13 +211,16 @@ KERASJSON
     echo "=== NetworkX ==="
     python2.7 -c "import networkx; print('NetworkX', networkx.__version__)"
 
-    echo "=== NumPy ==="
-    python2.7 -c "import numpy; print('NumPy', numpy.__version__)"
-
     echo "=== HMMER ==="
     /opt/hmmer/bin/hmmbuild -h 2>&1 | head -2
+
+    echo "=== Prodigal ==="
+    prodigal -v 2>&1 | head -2
+
+    echo "=== BLAT ==="
+    blat 2>&1 | head -2 || true
 
     echo "=== BOTA ==="
     [ -f /opt/BOTA/BOTA.py ] \
         && echo "OK: BOTA.py found at /opt/BOTA/BOTA.py" \
-        || echo "WARNING: BOTA.py not found - check clone step or bind-mount source"
+        || echo "WARNING: BOTA.py not found"
