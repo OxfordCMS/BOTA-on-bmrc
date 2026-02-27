@@ -11,3 +11,8 @@ BOTA itself is not covered by this license. [BOTA is developed by Chengwei Luo e
 ```bash
 apptainer exec bota.sif python2.7 convert_keras_models.py /path/to/your/models/
 ```
+## Rebuild Keras models 
+
+```bash
+apptainer exec bota.sif python2.7 rebuild_keras_models.py models/
+```
