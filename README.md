@@ -53,6 +53,41 @@ alleles H-2-IAb
 
 You can include multiple organism sections in a single config file and BOTA will process each in turn.
 
+## Pfam Database
+
+BOTA requires the Pfam-A HMM database for domain annotation. This is **not** included in the container and must be downloaded and prepared separately.
+
+* We have an indexed copy of the databases stored in `/gpfs3/well/kir/projects/mirror/pfam` . If you would like to download 
+your own copy and index it with the `hmmpress` in the container, below are the instructions. 
+
+### Download
+
+Download the latest release from the EBI Pfam FTP server:
+
+```
+ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release
+```
+
+Fetch `Pfam-A.hmm.gz` from that directory, then decompress it:
+
+```bash
+gunzip Pfam-A.hmm.gz
+```
+
+### Prepare the HMM index
+
+Before BOTA can use the database, you need to press it with `hmmpress` to generate the binary index files (`.h3f`, `.h3i`, `.h3m`, `.h3p`) that `hmmscan` requires. You can run this step directly via the container:
+
+```bash
+apptainer exec hbota_stepa.sif hmmpress Pfam-A.hmm
+```
+
+This will produce five files in the same directory (`Pfam-A.hmm` plus the four index files). Place all five in a single directory and point `BOTA_PFAM_DIR` at it — the `bota` wrapper will bind-mount them into the container automatically.
+
+> **Tip:** The Pfam database is large (~3 GB compressed). Download and press it once and keep it in a shared location so it can be reused across runs.
+
+
+
 ## The `bota` wrapper script
 
 The `bota` script is a thin Bash wrapper that takes care of all the Apptainer bookkeeping so you can call BOTA.py as if it were a regular command.
