@@ -35,7 +35,7 @@ def build_model_from_json(json_path):
     with open(json_path, 'rb') as fh:
         data = json.load(fh)
 
-    # Get layer list — handle both 0.x and partially-converted formats
+    # Get layer list - handle both 0.x and partially-converted formats
     if data.get('class_name') == 'Sequential':
         layers = data['config']
     else:
