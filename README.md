@@ -80,4 +80,21 @@ Before launching the container, the script verifies that the `.sif` image exists
 
 ---
 
+## Running BOTA
 
+Once your config file and output directory are in place, invoke the wrapper directly:
+
+```bash
+./bota -c /gpfs3/well/kir/projects/mirror/containers/BOTA/sample_config \
+       -o /gpfs3/well/kir/projects/mirror/containers/BOTA/OUTPUT \
+       -t ${SLURM_CPUS_PER_TASK}
+```
+
+| Flag | Description                                                  |
+| ---- | ------------------------------------------------------------ |
+| `-c` | Path to your `sample_config` file                            |
+| `-o` | Output directory (will be created if it doesn't exist)       |
+| `-t` | Number of CPU threads — using `$SLURM_CPUS_PER_TASK` automatically picks up the allocation from your SLURM job |
+
+> **Note:** For cluster jobs, ensure your SLURM submission requests the cores you intend to pass via `-t`, 
+for example `#SBATCH --cpus-per-task=8`.
