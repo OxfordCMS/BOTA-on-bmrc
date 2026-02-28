@@ -9,6 +9,11 @@
 #   BOTA_SIF       path to the Apptainer image
 #                  (default: same directory as this script)
 
+
+# Resolve any symlinks in the current directory to avoid read-only filesystem
+# issues when Apptainer bind-mounts paths (e.g. /well -> /gpfs3/well)
+cd -P "$(pwd)"
+
 PFAM_DIR="${BOTA_PFAM_DIR:-/gpfs3/well/kir/projects/mirror/containers/BOTA/pfam}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SIF="${BOTA_SIF:-${SCRIPT_DIR}/bota.sif}"
