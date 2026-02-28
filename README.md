@@ -133,3 +133,54 @@ Once your config file and output directory are in place, invoke the wrapper dire
 
 > **Note:** For cluster jobs, ensure your SLURM submission requests the cores you intend to pass via `-t`, 
 for example `#SBATCH --cpus-per-task=8`.
+
+
+
+### Standard Out ( Example) 
+
+* We can safely ignore the `W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.1` warnings 
+
+```bash
+➜  ./bota -c /gpfs3/well/kir/projects/mirror/containers/BOTA/sample_config -o /gpfs3/well/kir/projects/mirror/containers/BOTA/OUTPUT -t ${SLURM_CPUS_PER_TASK}                                                
+
+Using TensorFlow backend.
+################ Project Configurations ##############
+[3rd party programs]
+  prodigal: /usr/bin/prodigal
+  hmmscan: /usr/bin/hmmscan
+  hmmtop: /usr/local/src/hmmtop_2.1/hmmtop
+  psort: /usr/local/psortb/bin/psort
+
+[Citrobacter_rodentium_ATCC_51459]
+  fna=/gpfs3/well/kir/projects/mirror/containers/BOTA/data/Citrobacter_rodentium_ATCC_51459/GCF_000835925.1_ASM83592v1_genomic.fna
+  gff=/gpfs3/well/kir/projects/mirror/containers/BOTA/data/Citrobacter_rodentium_ATCC_51459/GCF_000835925.1_ASM83592v1_genomic.gff
+  hmmtop=None
+  hmmscan=None
+  psort=None
+        Gram=None
+  [Alleles]
+    H-2-IAb
+
+################# Data Preparation ################
+  [Citrobacter_rodentium_ATCC_51459] Now extracting A.A. sequences.
+/usr/local/lib/python2.7/dist-packages/Bio/Seq.py:2576: BiopythonWarning: Partial codon, len(sequence) not a multiple of three. Explicitly trim the sequence or add trailing N before translation. This may become an error in future.
+  BiopythonWarning)
+  [Citrobacter_rodentium_ATCC_51459] Now deciding Gram stain type.
+  [Citrobacter_rodentium_ATCC_51459] HMMscan against Pfam-A for domain ID.
+  [Citrobacter_rodentium_ATCC_51459] Determining protein subcellular location using PSORT.
+  [Citrobacter_rodentium_ATCC_51459] Now predicting transmembrane structures using HMMTOP...
+  [Citrobacter_rodentium_ATCC_51459] Now PW Matrix scoring...
+  [Citrobacter_rodentium_ATCC_51459] Integrating all data for DNN module...
+################# DNN Model Prediction ################
+2026-02-27 21:06:24.814899: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.1 instructions, but these are available on your machine and could speed up CPU computations.
+2026-02-27 21:06:24.814932: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.2 instructions, but these are available on your machine and could speed up CPU computations.
+2026-02-27 21:06:24.814938: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX instructions, but these are available on your machine and could speed up CPU
+computations.
+2026-02-27 21:06:24.814943: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX2 instructions, but these are available on your machine and could speed up CPU computations.
+2026-02-27 21:06:24.814948: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX512F instructions, but these are available on your machine and could speed up
+CPU computations.
+2026-02-27 21:06:24.814954: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use FMA instructions, but these are available on your machine and could speed up CPU
+computations.
+  [Citrobacter_rodentium_ATCC_51459] 176 peptides predicted.
+Done.
+```
