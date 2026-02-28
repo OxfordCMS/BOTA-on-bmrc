@@ -8,6 +8,9 @@
    id="svg35"
    sodipodi:docname="bota-quickstart.svg"
    inkscape:version="1.4.2 (1:1.4.2+202505120737+ebf0e940d0)"
+   inkscape:export-filename="bota-quickstart.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -372,7 +375,7 @@
        sodipodi:role="line"
        id="tspan35"
        x="176"
-       y="318">Configure sample_config - See &quot;Confuration&quot;section</tspan><tspan
+       y="318">Setup sample_config - See &quot;Configuration&quot;section</tspan><tspan
        sodipodi:role="line"
        id="tspan36"
        x="176"
