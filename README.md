@@ -9,7 +9,7 @@ BOTA itself is not covered by this license. [BOTA is developed by Chengwei Luo e
 - - -
 
 <p align="center">
-  <img src="./assets/bota-quickstart.svg" width="800"/>
+  <img src="./assets/bota-quickstart.png" width="800"/>
 </p>
 
 <br/>
