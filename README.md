@@ -134,9 +134,28 @@ Once your config file and output directory are in place, invoke the wrapper dire
 > **Note:** For cluster jobs, ensure your SLURM submission requests the cores you intend to pass via `-t`, 
 for example `#SBATCH --cpus-per-task=8`.
 
+### Troubleshooting/Errors
 
+1. `sample_config` requires **absolute** paths for input files. Since BMRC uses a number of symlinks, my recommendation is to run `realpath` command for each of the unput file and use that 
+    absolute paths .i.e. `realpath /path/to/file` 
 
-### Standard Out ( Example) 
+2. `IOError: [Errno 30] Read-only file system:`. This is a first level error which can get triggered within the first 20 seconds. It  is related to BMRC symlinks as well.i.e. Container tools such as 
+    Apptainer do not translate symlinks very well . Therefore, we need to submit the job from a fully resolved physical path. 
+	-  Solution for this is to run `cd -P .` from the current working directory prior to submission. This is already implemented in the `bota`wrapper script.
+
+```bash
+################# Data Preparation ################
+Traceback (most recent call last):
+  File "/usr/local/src/bota/BOTA/BOTA.py", line 970, in <module>
+    if __name__ == '__main__': main()
+  File "/usr/local/src/bota/BOTA/BOTA.py", line 778, in main
+    if not os.path.exists(t): shutil.copyfile(o, t)
+  File "/usr/lib/python2.7/shutil.py", line 97, in copyfile
+    with open(dst, 'wb') as fdst:
+IOError: [Errno 30] Read-only file system: '/well/kir/mirror/containers/BOTA/hmmtop.arch'
+```
+
+## Standard Out ( Example) 
 
 * We can safely ignore the `W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.1` warnings 
 
