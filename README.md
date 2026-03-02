@@ -18,13 +18,30 @@ BOTA itself is not covered by this license. [BOTA is developed by Chengwei Luo e
 
 - We have a pre-pulled container stored in `/gpfs3/well/kir/projects/mirror/containers/bota.sif`
 
-- If you are pull a new container image to BMRC filesystem, make sure to setup the `APPTAINER_CACHEDIR` and `APPTAINER_TMPRDIR` 
-environment variables as per https://kir-rescomp.github.io/training-intro-to-apptainer/2.configuring-apptainer-cache/#setting-up-your-environment
+### Pulling a new image
 
+The container image is hosted on the GitHub Container Registry (GHCR) as a private package,
+so pulling requires authentication with a GitHub personal access token (PAT).
 
+**1. Generate a GitHub PAT** with `read:packages` scope at:
+https://github.com/settings/tokens
+
+**2. Authenticate Apptainer with GHCR:**
+
+```bash
+echo $GITHUB_TOKEN | apptainer registry login --username YOUR_GITHUB_USERNAME --password-stdin ghcr.io
+```
+
+**3. Set up cache directories** as per the BMRC Apptainer guide before pulling:
+https://kir-rescomp.github.io/training-intro-to-apptainer/2.configuring-apptainer-cache/#setting-up-your-environment
+
+**4. Pull the image:**
 ```bash
 apptainer pull bota.sif oras://ghcr.io/dinindusenanayake/bota-container:latest
 ```
+
+> **Note:** The GHCR login persists in `~/.apptainer/docker-config.json` so you only 
+> need to authenticate once per system.
 
 ## Configuration: `sample_config`
 
