@@ -152,11 +152,13 @@ Once your config file and output directory are in place, invoke the wrapper dire
 
 | Flag | Description                                                  |
 | ---- | ------------------------------------------------------------ |
-| `-c` | Path to your `sample_config` file                            |
-| `-o` | Output directory (will be created if it doesn't exist)       |
+| `-c` | **Absolute** path to your `sample_config` file                            |
+| `-o` | **Absolute** path to the Output directory (will be created if it doesn't exist)       |
 | `-t` | Number of CPU threads — using `$SLURM_CPUS_PER_TASK` automatically picks up the allocation from your SLURM job |
 
-> **Note:** For cluster jobs, ensure your SLURM submission requests the cores you intend to pass via `-t`, 
+> **Note:**
+> - Path to config and Output must be absolute 
+> - For cluster jobs, ensure your SLURM submission requests the cores you intend to pass via `-t`, 
 for example `#SBATCH --cpus-per-task=8`.
 
 ### Troubleshooting/Errors
