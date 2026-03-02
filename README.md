@@ -23,7 +23,7 @@ environment variables as per https://kir-rescomp.github.io/training-intro-to-app
 
 
 ```bash
-apptainer pull bota-container.sif oras://ghcr.io/dinindusenanayake/bota-container:latest
+apptainer pull bota.sif oras://ghcr.io/dinindusenanayake/bota-container:latest
 ```
 
 ## Configuration: `sample_config`
