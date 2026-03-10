@@ -62,7 +62,22 @@ This cross-checks every `.fna` in `fna.dir/` against `gff.dir/` and warns about 
 #SBATCH --array=1-1333%300    # adjust 1333 to your total, %300 = max concurrent
 ```
 
-**Step 3:** Submit:
+**Step 3** Refer to `Configuration — edit these paths` in `bota_array.sh` script. Make sure the paths to .fna and .gff files are correct. 
+
+```bash
+# -----------------------------------------------------------------------
+# Configuration — edit these paths
+# -----------------------------------------------------------------------
+WORK_DIR="$(pwd)"
+FNA_DIR="${WORK_DIR}/fna.dir"
+GFF_DIR="${WORK_DIR}/gff.dir"
+OUTPUT_DIR="${WORK_DIR}/OUTPUT"
+CONFIG_DIR="${WORK_DIR}/configs"
+SAMPLES_FILE="${WORK_DIR}/samples.txt"
+ALLELES="H-2-IAb"   # adjust as needed
+```
+
+**Step 4:** Submit:
 ```bash
 sbatch bota_array.sh
 ```
