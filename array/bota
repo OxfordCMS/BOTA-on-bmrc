@@ -1,0 +1,46 @@
+#!/bin/bash
+# bota - wrapper to run BOTA using the PSORTb container.
+# This container includes BOTA.py, hmmtop, psort, keras 0.3.3,
+# and the pre-trained model files - no bind-mounts needed for those.
+#
+# Environment variables:
+#   BOTA_PFAM_DIR  path to directory containing Pfam-A.hmm* files
+#                  (default: /gpfs3/well/kir/projects/mirror/containers/BOTA/pfam)
+#   BOTA_SIF       path to the Apptainer image
+#                  (default: same directory as this script)
+
+PFAM_DIR="${BOTA_PFAM_DIR:-/gpfs3/well/kir/projects/mirror/containers/BOTA/pfam}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SIF="${BOTA_SIF:-${SCRIPT_DIR}/bota.sif}"
+
+# Paths inside the container
+BOTA_PY="/usr/local/src/bota/BOTA/BOTA.py"
+BOTA_DB="/usr/local/src/bota/BOTA/db"
+
+# Sanity checks
+if [ ! -f "${SIF}" ]; then
+    echo "[ERROR] Cannot find container at: ${SIF}" >&2
+    echo "        Set BOTA_SIF=/path/to/container.sif to override." >&2
+    exit 1
+fi
+
+for ext in "" ".h3f" ".h3i" ".h3m" ".h3p"; do
+    f="${PFAM_DIR}/Pfam-A.hmm${ext}"
+    if [ ! -f "${f}" ]; then
+        echo "[ERROR] Cannot find Pfam file: ${f}" >&2
+        echo "        Set BOTA_PFAM_DIR=/path/to/pfam to override." >&2
+        exit 1
+    fi
+done
+
+apptainer exec \
+    --pwd "$(pwd)" \
+    --bind /gpfs3/well \
+    --bind /gpfs3/users \
+    --bind "${PFAM_DIR}/Pfam-A.hmm:${BOTA_DB}/Pfam-A.hmm" \
+    --bind "${PFAM_DIR}/Pfam-A.hmm.h3f:${BOTA_DB}/Pfam-A.hmm.h3f" \
+    --bind "${PFAM_DIR}/Pfam-A.hmm.h3i:${BOTA_DB}/Pfam-A.hmm.h3i" \
+    --bind "${PFAM_DIR}/Pfam-A.hmm.h3m:${BOTA_DB}/Pfam-A.hmm.h3m" \
+    --bind "${PFAM_DIR}/Pfam-A.hmm.h3p:${BOTA_DB}/Pfam-A.hmm.h3p" \
+    --bind "$(pwd)/BOTA.py:${BOTA_PY}" \
+    "${SIF}" python "${BOTA_PY}" "$@"
