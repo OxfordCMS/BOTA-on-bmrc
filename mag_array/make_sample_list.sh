@@ -9,8 +9,9 @@
 set -euo pipefail
 cd -P "$(pwd)"
 
-FNA_DIR="${PWD}/fna.dir"
-GFF_DIR="${PWD}/gff.dir"
+# Enter paths for files with .fna and .gff files
+FNA_DIR=""
+GFF_DIR=""
 OUT="samples.txt"
 MISSING=0
 
